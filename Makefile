@@ -3,3 +3,5 @@ kbcolor: kbcolor.c
 
 clean:
 	rm -f kbcolor
+
+.PHONY: clean

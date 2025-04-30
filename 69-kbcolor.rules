@@ -1,0 +1,2 @@
+# kbcolor for lenovo ideapad gaming 3i vendor and product id udev rule
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="048d", ATTRS{idProduct}=="c963", GROUP="kbcolor", MODE="0660" # <hidapi/hidapi.h> uses hidraw subsystem
