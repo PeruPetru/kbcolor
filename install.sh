@@ -7,18 +7,13 @@ SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
 # Configuration
 RULE_FILENAME="69-kbcolor.rules"
-SOURCE_RULE="${SCRIPT_DIR}/${RULE_FILENAME}"
-TARGET_DIR="/lib/udev/rules.d"
-TARGET_RULE="${TARGET_DIR}/${RULE_FILENAME}"
 GROUP_NAME="kbcolor"
-LINKING_NAME="kbcolor"
-LINKING_DIR="/usr/local/bin"
+PROGRAM_NAME="kbcolor"
+DAEMON_NAME="kbcolordaemon"
 
-# Check for the rule file next to the script
-if [[ ! -f "${SOURCE_RULE}" ]]; then
-    echo "Error: '${RULE_FILENAME}' not found in script directory (${SCRIPT_DIR})."
-    exit 1
-fi
+RULE_DIR="/lib/udev/rules.d"
+LOCAL_BINARY_DIR="/usr/local/bin"
+SERVICE_DIR="/etc/systemd/system"
 
 # Ensure we have root (re-exec with sudo if not)
 if [[ "${EUID}" -ne 0 ]]; then
@@ -26,27 +21,17 @@ if [[ "${EUID}" -ne 0 ]]; then
     exec sudo bash "$0" "$@"
 fi
 
-echo "==> Installing udev rule: ${RULE_FILENAME}"
 
-# Backup existing rule if present
-if [[ -f "${TARGET_RULE}" ]]; then
-    exit 0
-    #timestamp=$(date +%Y%m%d-%H%M%S)
-    #backup="${TARGET_RULE}.bak.${timestamp}"
-    #echo "Backing up existing rule to ${backup}"
-    #cp "${TARGET_RULE}" "${backup}"
+#install if not previously installed
+if ! [[ -f "${RULE_DIR}/${RULE_FILENAME}" ]]; then    
+    echo "Installing udev rule: ${RULE_FILENAME}"
+    echo "Copying ${SCRIPT_DIR}/${RULE_FILENAME} → ${RULE_DIR}/${RULE_FILENAME}"
+    cp "${SCRIPT_DIR}/${RULE_FILENAME}" "${RULE_DIR}/${RULE_FILENAME}"
+    echo "Reloading udev rules"
+    udevadm control --reload-rules
+    udevadm trigger
+    echo "udev rules installed."
 fi
-
-# Copy the new/updated rule
-echo "Copying ${SOURCE_RULE} → ${TARGET_RULE}"
-cp "${SOURCE_RULE}" "${TARGET_RULE}"
-
-# Reload and trigger udev
-echo "Reloading udev rules"
-udevadm control --reload-rules
-udevadm trigger
-
-echo "✅udev rules installed."
 
 # Check group membership and add if needed
 if ! getent group "${GROUP_NAME}" >/dev/null; then
@@ -67,7 +52,21 @@ fi
 echo "Building program"
 make
 
-echo "Linking executable"
-sudo ln -s "${SCRIPT_DIR}/${LINKING_NAME}" "${LINKING_DIR}/${LINKING_NAME}"
+if ! [[ -f "${LOCAL_BINARY_DIR}/${PROGRAM_NAME}" ]]; then
+    echo "Linking executable"
+    sudo ln -s "${SCRIPT_DIR}/${PROGRAM_NAME}" "${LOCAL_BINARY_DIR}/${PROGRAM_NAME}"
+fi
+
+if ! [[ -f "${LOCAL_BINARY_DIR}/${DAEMON_NAME}" ]]; then
+    echo "Linking daemon"
+    sudo ln -s "${SCRIPT_DIR}/${DAEMON_NAME}" "${LOCAL_BINARY_DIR}/${DAEMON_NAME}"
+fi
+
+if ! [[ -f "${SERVICE_DIR}/${PROGRAM_NAME}" ]]; then
+    echo "Linking service"
+    sudo ln -s "${SCRIPT_DIR}/${PROGRAM_NAME}.service" "${SERVICE_DIR}/${PROGRAM_NAME}.service"
+fi
+
+systemctl enable --now kbcolor
 
 echo "Installation complete."

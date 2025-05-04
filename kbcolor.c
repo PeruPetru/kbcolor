@@ -39,9 +39,9 @@ void setKeyboardColor(uint32_t color){
     hid_exit();
 }
 
-uint32_t hue2hex(float H) {
+uint32_t hue2hex(int H) {
     float r = 0, g = 0, b = 0;
-    float f = (H / 60.0f);
+    float f = ((float)H / 60.0f);
     int i = (int)f;
     float fmod = f - i;
 
@@ -63,15 +63,14 @@ uint32_t hue2hex(float H) {
 }
 
 int main(int argc, char *argv[]) {
-    char dirName[20];
-    if(argc <= 1) return 1;
+    if (argc <= 1) return 1;
     
-    for(int argn = 1; argn < argc; argn+=1){
+    for (int argn = 1; argn < argc; argn+=1) {
         if (!strcmp(argv[argn], "rave")) {
             clock_t initial_clock = clock();
             int angle = 0;
-            if(argc < argn + 1) return 1;
-            for(int i = 1; i <= strtol(argv[argn + 1], NULL, 10);){
+            if (argc < argn + 1) return 1;
+            for (int i = 1; i <= strtol(argv[argn + 1], NULL, 10); i += 1) {
                 setKeyboardColor(hue2hex(angle));
                 angle = (angle + 1) % 360;
                 if (angle == 0) i+=1;
@@ -80,7 +79,11 @@ int main(int argc, char *argv[]) {
             setKeyboardColor(0xaaaaaa);
             argn+=1;
             continue;
-        }else{
+        } else if (!strcmp(argv[argn], "hue")) {
+            if (argc < argn + 1) return 1;
+            setKeyboardColor(hue2hex(strtol(argv[argn + 1], NULL, 10)));
+            argn += 1;
+        } else {
             setKeyboardColor(strtol(argv[1], NULL, 16));
             return 0;
         }

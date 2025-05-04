@@ -1,0 +1,11 @@
+[Unit]
+Description=Automatic Keyboard Color Changer
+
+[Service]
+Type=forking
+Restart=always
+ExecStart=/usr/local/bin/kbcolordaemon
+
+
+[Install]
+WantedBy=multi-user.target
